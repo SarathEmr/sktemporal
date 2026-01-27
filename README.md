@@ -121,11 +121,11 @@ You can view workflow executions, activity results, and retry attempts in the UI
 When the postgres container gets built the first time, the migrations and seeds gets applied.
 The same files won't get applied the second time onwards.
 
-docker-compose build
-docker-compose up
+$ docker-compose build  
+$ docker-compose up  
 
-connect to Postgres CLI:
-$ psql -h localhost -p 5432 -U admin -d temporal      // password = "admin"
-\dt	// list the tables
-\c appdb	// move to a different database
-$ select * from users;
+Connect to Postgres CLI:
+$ psql -h localhost -p 5432 -U admin -d temporal      // password = "admin"  
+\dt	// list the tables  
+\c appdb	// move to a different database  
+$ select * from users;  
