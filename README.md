@@ -123,26 +123,34 @@ The same files won't get applied the second time onwards.
 
 ## Steps
 
+```bash
 $ docker-compose build  
 $ docker-compose up  
+```
 
 Connect to Postgres CLI:
+```bash
 $ psql -h localhost -p 5432 -U admin -d temporal      // password = "admin"  
 \dt	// list the tables  
 \c appdb	// move to a different database  
 $ select * from users;  
 $ select * from products;  
 $ select * from orders;  
+```
 
 Check localhost:8088 for temporal-UI  
 
 Run the task:
+```bash
 // order placing, inventory update, payment deduction
 // temporal client submits task to the worker
 sktemporal\client> go run main.go  
+```
 
 Check `temporal-worker` logs  
 
 Check db:
+```bash
 // make sure order is placed successfully
-$ select * from orders;  
+$ select * from orders;
+```  
