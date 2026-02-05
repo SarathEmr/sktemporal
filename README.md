@@ -121,6 +121,8 @@ You can view workflow executions, activity results, and retry attempts in the UI
 When the postgres container gets built the first time, the migrations and seeds gets applied.
 The same files won't get applied the second time onwards.
 
+## Steps
+
 $ docker-compose build  
 $ docker-compose up  
 
@@ -129,3 +131,18 @@ $ psql -h localhost -p 5432 -U admin -d temporal      // password = "admin"
 \dt	// list the tables  
 \c appdb	// move to a different database  
 $ select * from users;  
+$ select * from products;  
+$ select * from orders;  
+
+Check localhost:8088 for temporal-UI  
+
+Run the task:
+// order placing, inventory update, payment deduction
+// temporal client submits task to the worker
+sktemporal\client> go run main.go  
+
+Check `temporal-worker` logs  
+
+Check db:
+// make sure order is placed successfully
+$ select * from orders;  

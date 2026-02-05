@@ -15,6 +15,7 @@ func main() {
 	// Create Temporal client
 	c, err := client.Dial(client.Options{
 		HostPort: "localhost:7233",
+		// Namespace: "default",
 	})
 	if err != nil {
 		log.Fatalln("Unable to create temporal client", err)
@@ -36,7 +37,7 @@ func main() {
 
 	// Note: OrderWorkflow is in the main package, so we reference it by name
 	// In a real scenario, you might want to move OrderWorkflow to a shared package
-	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, "OrderWorkfloww", request)
+	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, "OrderWorkflow", request)
 	if err != nil {
 		log.Fatalln("Unable to execute workflow", err)
 	}

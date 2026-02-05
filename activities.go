@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	dbConnectionString = "postgres://admin:admin@localhost:5432/appdb?sslmode=disable"
+	dbConnectionString = "postgres://admin:admin@temporal-postgres:5432/appdb?sslmode=disable"
 )
 
 // InventoryResult holds the result of inventory update
