@@ -47,34 +47,34 @@ func OrderWorkflow(ctx workflow.Context, request model.OrderRequest) (err error)
 
 	// Activity 1: Update inventory
 	var inventoryResult InventoryResult
-	err = workflow.ExecuteActivity(ctx, UpdateInventoryActivity, request).Get(ctx, &inventoryResult)
+	err = workflow.ExecuteActivity(ctx, "UpdateInventoryActivity", request).Get(ctx, &inventoryResult)
 	if err != nil {
 		// Activity failed before being added to saga, no compensation needed
 		return err
 	}
 	// Add compensation step for inventory release
 	compensations = append(compensations, func(ctx workflow.Context) error {
-		return workflow.ExecuteActivity(ctx, ReleaseInventoryActivity, inventoryResult).Get(ctx, nil)
+		return workflow.ExecuteActivity(ctx, "ReleaseInventoryActivity", inventoryResult).Get(ctx, nil)
 	})
 
 	fmt.Println("--- Inventory updated ---")
 
 	// Activity 2: Deduct payment
 	var paymentResult PaymentResult
-	err = workflow.ExecuteActivity(ctx, DeductPaymentActivity, request, inventoryResult).Get(ctx, &paymentResult)
+	err = workflow.ExecuteActivity(ctx, "DeductPaymentActivity", request, inventoryResult).Get(ctx, &paymentResult)
 	if err != nil {
 		// Error occurred, compensations will be executed by defer
 		return err
 	}
 	// Add compensation step for payment refund
 	compensations = append(compensations, func(ctx workflow.Context) error {
-		return workflow.ExecuteActivity(ctx, RefundPaymentActivity, paymentResult).Get(ctx, nil)
+		return workflow.ExecuteActivity(ctx, "RefundPaymentActivity", paymentResult).Get(ctx, nil)
 	})
 
 	fmt.Println("--- Payment deducted ---")
 
 	// Activity 3: Shipping
-	err = workflow.ExecuteActivity(ctx, ShippingActivity, request, paymentResult).Get(ctx, nil)
+	err = workflow.ExecuteActivity(ctx, "ShippingActivity", request, paymentResult).Get(ctx, nil)
 	if err != nil {
 		// Error occurred, compensations will be executed by defer in reverse order
 		return err

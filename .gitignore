@@ -1,0 +1,7 @@
+# Environment and secrets – never commit
+.env
+.env.*
+!.env.example
+
+# Binaries and build (Go on Windows produces .exe)
+*.exe

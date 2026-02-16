@@ -9,6 +9,9 @@ import (
 )
 
 func startWorker() {
+	// Load config from environment (e.g. .env.dev or system env)
+	cfg := LoadConfigFromEnv()
+
 	// Get Temporal address from environment variable, default to localhost:7233
 	temporalAddress := "localhost:7233"
 	if addr := os.Getenv("TEMPORAL_ADDRESS"); addr != "" {
@@ -30,12 +33,14 @@ func startWorker() {
 	// Register workflow
 	w.RegisterWorkflow(OrderWorkflow)
 
-	// Register activities
-	w.RegisterActivity(UpdateInventoryActivity)
-	w.RegisterActivity(ReleaseInventoryActivity)
-	w.RegisterActivity(DeductPaymentActivity)
-	w.RegisterActivity(RefundPaymentActivity)
-	w.RegisterActivity(ShippingActivity)
+	// Register activities with config (pass the Activities instance)
+	activities := NewActivities(cfg)
+
+	w.RegisterActivity(activities.UpdateInventoryActivity)
+	w.RegisterActivity(activities.ReleaseInventoryActivity)
+	w.RegisterActivity(activities.DeductPaymentActivity)
+	w.RegisterActivity(activities.RefundPaymentActivity)
+	w.RegisterActivity(activities.ShippingActivity)
 
 	// Start worker
 	log.Println("Worker started. Press Ctrl+C to exit.")

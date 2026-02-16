@@ -4,16 +4,16 @@ services:
     image: postgres:15
     container_name: temporal-postgres
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: temporal
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-temporal}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d temporal"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-temporal}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,17 +24,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-temporal}
+      POSTGRES_DB_VISIBILITY: ${POSTGRES_DB:-temporal}_visibility
     entrypoint: /bin/bash
     command: >
       -c "
       set -e;
       echo 'Setting up Temporal schema...';
-      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u admin -pw admin --db temporal create || true;
-      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u admin -pw admin --db temporal_visibility create || true;
-      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u admin -pw admin --db temporal setup-schema -v 0.0;
-      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u admin -pw admin --db temporal update-schema --schema-name postgresql/v12/temporal;
-      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u admin -pw admin --db temporal_visibility setup-schema -v 0.0;
-      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u admin -pw admin --db temporal_visibility update-schema --schema-name postgresql/v12/visibility;
+      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u $$POSTGRES_USER -pw $$POSTGRES_PASSWORD --db $$POSTGRES_DB create || true;
+      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u $$POSTGRES_USER -pw $$POSTGRES_PASSWORD --db $$POSTGRES_DB_VISIBILITY create || true;
+      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u $$POSTGRES_USER -pw $$POSTGRES_PASSWORD --db $$POSTGRES_DB setup-schema -v 0.0;
+      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u $$POSTGRES_USER -pw $$POSTGRES_PASSWORD --db $$POSTGRES_DB update-schema --schema-name postgresql/v12/temporal;
+      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u $$POSTGRES_USER -pw $$POSTGRES_PASSWORD --db $$POSTGRES_DB_VISIBILITY setup-schema -v 0.0;
+      temporal-sql-tool --plugin postgres12 --ep postgres -p 5432 -u $$POSTGRES_USER -pw $$POSTGRES_PASSWORD --db $$POSTGRES_DB_VISIBILITY update-schema --schema-name postgresql/v12/visibility;
       echo 'Schema setup complete!';
       "
     restart: "no"
@@ -52,11 +57,11 @@ services:
     environment:
       DB: postgres12
       DB_PORT: 5432
-      POSTGRES_USER: admin
-      POSTGRES_PWD: admin
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD:-admin}
       POSTGRES_SEEDS: postgres
-      DBNAME: temporal
-      VISIBILITY_DBNAME: temporal_visibility
+      DBNAME: ${POSTGRES_DB:-temporal}
+      VISIBILITY_DBNAME: ${POSTGRES_DB:-temporal}_visibility
     volumes:
       - temporal_data:/etc/temporal
     restart: unless-stopped
@@ -73,8 +78,13 @@ services:
       - |
         echo "Waiting for Temporal server..."
         sleep 15
-        echo "Registering default namespace..."
-        tctl --namespace default namespace register || true
+        echo "Checking default namespace..."
+        if tctl --namespace default namespace describe 2>/dev/null; then
+          echo "Default namespace already exists, skipping registration."
+        else
+          echo "Registering default namespace..."
+          tctl --namespace default namespace register
+        fi
         echo "Done."
     restart: "no"
 
@@ -90,6 +100,11 @@ services:
         condition: service_completed_successfully
     environment:
       TEMPORAL_ADDRESS: temporal:7233
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_HOST: ${POSTGRES_HOST:-temporal-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      APP_DB_NAME: ${APP_DB_NAME:-appdb}
     restart: unless-stopped
 
   temporal-ui:

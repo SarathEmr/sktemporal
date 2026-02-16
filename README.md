@@ -119,7 +119,10 @@ You can view workflow executions, activity results, and retry attempts in the UI
 ***
 
 When the postgres container gets built the first time, the migrations and seeds gets applied.
-The same files won't get applied the second time onwards.
+The same files won't get applied the second time onwards.  
+
+Postgres credentials are pulled from the .env file located in project root. The file is gitignored; so 
+it won't get pushed to git remote. In prod environment, we can create .env file with prod credentials.
 
 ## Steps
 
@@ -128,7 +131,7 @@ $ docker-compose build
 $ docker-compose up  
 ```
 
-Connect to Postgres CLI:
+Connect to Postgres CLI from Ubuntu terminal:
 ```bash
 $ psql -h localhost -p 5432 -U admin -d temporal      // password = "admin"  
 \dt	// list the tables  

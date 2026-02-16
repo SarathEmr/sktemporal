@@ -14,9 +14,15 @@ import (
 	"go.temporal.io/sdk/activity"
 )
 
-const (
-	dbConnectionString = "postgres://admin:admin@temporal-postgres:5432/appdb?sslmode=disable"
-)
+// Activities holds dependencies (e.g. config) for Temporal activities.
+type Activities struct {
+	cfg *Config
+}
+
+// NewActivities returns an Activities instance with the given config.
+func NewActivities(cfg *Config) *Activities {
+	return &Activities{cfg: cfg}
+}
 
 // InventoryResult holds the result of inventory update
 type InventoryResult struct {
@@ -32,11 +38,11 @@ type PaymentResult struct {
 }
 
 // Activity 1: Update Inventory
-func UpdateInventoryActivity(ctx context.Context, request model.OrderRequest) (InventoryResult, error) {
+func (a *Activities) UpdateInventoryActivity(ctx context.Context, request model.OrderRequest) (InventoryResult, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Updating inventory", "productID", request.ProductID, "quantity", request.ProductQuantity)
 
-	db, err := sql.Open("postgres", dbConnectionString)
+	db, err := sql.Open("postgres", a.cfg.DBConnectionString())
 	if err != nil {
 		return InventoryResult{}, fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -110,11 +116,11 @@ func UpdateInventoryActivity(ctx context.Context, request model.OrderRequest) (I
 }
 
 // Compensation Activity: Release Inventory
-func ReleaseInventoryActivity(ctx context.Context, result InventoryResult) error {
+func (a *Activities) ReleaseInventoryActivity(ctx context.Context, result InventoryResult) error {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Releasing inventory", "productID", result.ProductID, "quantity", result.QuantityDeducted)
 
-	db, err := sql.Open("postgres", dbConnectionString)
+	db, err := sql.Open("postgres", a.cfg.DBConnectionString())
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -136,11 +142,11 @@ func ReleaseInventoryActivity(ctx context.Context, result InventoryResult) error
 }
 
 // Activity 2: Deduct Payment
-func DeductPaymentActivity(ctx context.Context, request model.OrderRequest, inventoryResult InventoryResult) (PaymentResult, error) {
+func (a *Activities) DeductPaymentActivity(ctx context.Context, request model.OrderRequest, inventoryResult InventoryResult) (PaymentResult, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Processing payment", "orderID", inventoryResult.OrderID)
 
-	db, err := sql.Open("postgres", dbConnectionString)
+	db, err := sql.Open("postgres", a.cfg.DBConnectionString())
 	if err != nil {
 		return PaymentResult{}, fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -172,11 +178,11 @@ func DeductPaymentActivity(ctx context.Context, request model.OrderRequest, inve
 }
 
 // Compensation Activity: Refund Payment
-func RefundPaymentActivity(ctx context.Context, result PaymentResult) error {
+func (a *Activities) RefundPaymentActivity(ctx context.Context, result PaymentResult) error {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Refunding payment", "orderID", result.OrderID, "amount", result.AmountPaid)
 
-	db, err := sql.Open("postgres", dbConnectionString)
+	db, err := sql.Open("postgres", a.cfg.DBConnectionString())
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -199,11 +205,11 @@ func RefundPaymentActivity(ctx context.Context, result PaymentResult) error {
 }
 
 // Activity 3: Shipping
-func ShippingActivity(ctx context.Context, request model.OrderRequest, paymentResult PaymentResult) error {
+func (a *Activities) ShippingActivity(ctx context.Context, request model.OrderRequest, paymentResult PaymentResult) error {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Processing shipping", "orderID", paymentResult.OrderID)
 
-	db, err := sql.Open("postgres", dbConnectionString)
+	db, err := sql.Open("postgres", a.cfg.DBConnectionString())
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
