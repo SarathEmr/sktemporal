@@ -14,6 +14,9 @@ import (
 	"go.temporal.io/sdk/activity"
 )
 
+// openDB opens a database connection. Default is sql.Open; tests can replace it to inject a mock.
+var openDB = sql.Open
+
 // Activities holds dependencies (e.g. config) for Temporal activities.
 type Activities struct {
 	cfg *Config
@@ -120,7 +123,7 @@ func (a *Activities) ReleaseInventoryActivity(ctx context.Context, result Invent
 	logger := activity.GetLogger(ctx)
 	logger.Info("Releasing inventory", "productID", result.ProductID, "quantity", result.QuantityDeducted)
 
-	db, err := sql.Open("postgres", a.cfg.DBConnectionString())
+	db, err := openDB("postgres", a.cfg.DBConnectionString())
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}

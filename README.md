@@ -157,3 +157,10 @@ Check db:
 // make sure order is placed successfully
 $ select * from orders;
 ```  
+
+Check the Test coverage:  
+Generate the test coverage report to the file named `coverage` :  
+```bash
+$ go test -coverprofile=coverage ./...   
+$ go tool cover -html=coverage
+```
