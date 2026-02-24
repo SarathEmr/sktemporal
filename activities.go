@@ -45,7 +45,7 @@ func (a *Activities) UpdateInventoryActivity(ctx context.Context, request model.
 	logger := activity.GetLogger(ctx)
 	logger.Info("Updating inventory", "productID", request.ProductID, "quantity", request.ProductQuantity)
 
-	db, err := sql.Open("postgres", a.cfg.DBConnectionString())
+	db, err := openDB("postgres", a.cfg.DBConnectionString())
 	if err != nil {
 		return InventoryResult{}, fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -149,7 +149,7 @@ func (a *Activities) DeductPaymentActivity(ctx context.Context, request model.Or
 	logger := activity.GetLogger(ctx)
 	logger.Info("Processing payment", "orderID", inventoryResult.OrderID)
 
-	db, err := sql.Open("postgres", a.cfg.DBConnectionString())
+	db, err := openDB("postgres", a.cfg.DBConnectionString())
 	if err != nil {
 		return PaymentResult{}, fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -185,7 +185,7 @@ func (a *Activities) RefundPaymentActivity(ctx context.Context, result PaymentRe
 	logger := activity.GetLogger(ctx)
 	logger.Info("Refunding payment", "orderID", result.OrderID, "amount", result.AmountPaid)
 
-	db, err := sql.Open("postgres", a.cfg.DBConnectionString())
+	db, err := openDB("postgres", a.cfg.DBConnectionString())
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -212,35 +212,23 @@ func (a *Activities) ShippingActivity(ctx context.Context, request model.OrderRe
 	logger := activity.GetLogger(ctx)
 	logger.Info("Processing shipping", "orderID", paymentResult.OrderID)
 
-	db, err := sql.Open("postgres", a.cfg.DBConnectionString())
+	db, err := openDB("postgres", a.cfg.DBConnectionString())
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer db.Close()
 
-	// Begin transaction
-	tx, err := db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
-
 	// Simulate shipping process
 	time.Sleep(2 * time.Second) // Simulate shipping API call
 
 	// Update order status to delivered
-	_, err = tx.Exec(
+	_, err = db.Exec(
 		`UPDATE orders SET status = $1 WHERE id = $2`,
 		"ORDER_DELIVERED",
 		paymentResult.OrderID,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
-	}
-
-	// Commit transaction
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	logger.Info("Shipping completed successfully")
