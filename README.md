@@ -164,3 +164,11 @@ Generate the test coverage report to the file named `coverage` :
 $ go test -coverprofile=coverage ./...   
 $ go tool cover -html=coverage
 ```
+
+## Screenshots
+
+### Successful run
+![alt text](Temporal-UI-workflow-success-Screenshot.jpeg)
+
+### Failed run
+![alt text](Temporal-UI-worklfow-failure-Screenshot.png)
